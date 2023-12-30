@@ -16,7 +16,7 @@
 //     int *id = (int *)arg;
 //     while (true)
 //     {
-//         // pthread_mutex_lock(&mutex);   事实上互斥锁不能加到该位置，会造成死锁
+//         // pthread_mutex_lock(&mutex);   // 事实上互斥锁不能加到该位置，拿到mutex等待，会造成死锁
 //         sem_wait(&pSem);
 //         // 这里与cond条件量实现大不相同，原因为当条件量发生阻塞时会主动放弃mutex，被唤醒后重新抢mutex
 //         pthread_mutex_lock(&mutex);
@@ -25,7 +25,7 @@
 //         cout << "producer id : " << *id << " number = " << element << "  queue szie = " << Q.size() << endl;
 //         pthread_mutex_unlock(&mutex);
 //         sem_post(&cSem);
-//         sleep(rand() % 3);
+//         usleep(rand() % 3);
 //     }
 //     return NULL;
 // }
