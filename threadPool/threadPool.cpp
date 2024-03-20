@@ -56,6 +56,7 @@ threadPool *threadPoolCreate(int capacity, int maxNum, int minNum)
         delete[] pool->taskQueue;
     if (pool != NULL)
         delete pool;
+    return NULL;
 }
 void *worker(void *arg) // 传进来的arg即为线程池，原因为worker需要不断读取线程池的内容，包括任务队列和状态
 {
@@ -74,7 +75,7 @@ void *worker(void *arg) // 传进来的arg即为线程池，原因为worker需�
                 if (pool->liveNum > pool->minNum)
                 {
                     pool->liveNum--;
-                    pthread_mutex_unlock(&pool->mutexPool);
+                    cout << "Exiting thread id :" << pthread_self() << endl;
                     threadExit(pool);
                 }
             }
@@ -93,19 +94,22 @@ void *worker(void *arg) // 传进来的arg即为线程池，原因为worker需�
         pool->queueFront = (pool->queueFront + 1) % pool->capacity; // 这里将队列看成环形队列
         pool->sizeQueue--;
         pthread_cond_signal(&pool->notFull); // 消费者消耗队列里的一个元素，队列一定不为空，唤醒生产者进行任务添加
+        cout << "Thread " << pthread_self() << " start working ...." << endl;
+        cout << "current live thread number : " << pool->liveNum << endl;
         pthread_mutex_unlock(&pool->mutexPool);
         // 开始工作
-        cout << "Thread " << pthread_self() << " start working ...." << endl;
+
         pthread_mutex_lock(&pool->mutexBusy);
         pool->busyNum++;
         pthread_mutex_unlock(&pool->mutexBusy);
 
         task.function(task.arg);
-        delete task.arg;
+        // delete task.arg;
         task.arg = nullptr;
-        cout << "Thread " << pthread_self() << " end of working ...." << endl;
+
         // 结束工作
         pthread_mutex_lock(&pool->mutexBusy);
+        cout << "Thread " << pthread_self() << " end of working ...." << endl;
         pool->busyNum--;
         pthread_mutex_unlock(&pool->mutexBusy);
     }
@@ -119,7 +123,7 @@ void *manager(void *arg)
     while (!pool->shutDown)
     {
         // 每隔3秒钟检测一次
-        sleep(3);
+        sleep(1);
         // 读取当前线程池里，活动线程的数量
         pthread_mutex_lock(&pool->mutexPool);
         int queueSize = pool->sizeQueue;
@@ -173,10 +177,10 @@ void threadExit(threadPool *pool)
         if (pool->workId[i] == tid)
         {
             pool->workId[i] = 0;
-            cout << "Exiting thread id :" << tid << endl;
             break;
         }
     }
+    pthread_mutex_unlock(&pool->mutexPool);
     pthread_exit(NULL);
 }
 // 给线程池添加任务
@@ -235,11 +239,19 @@ int threadPoolDestroy(threadPool *pool)
     {
         pthread_cond_signal(&pool->notEmpty);
     }
+    for (int i = 0; i < pool->maxNum; ++i)
+    {
+        if (pool->workId[i] != 0)
+        {
+            cout<<"work id = "<<pool->workId[i]<<endl;
+            pthread_join(pool->workId[i], NULL);
+        }
+    }
     // 释放堆内存
     if (pool->taskQueue != NULL)
         delete[] pool->taskQueue;
     if (pool->workId != NULL)
-        delete[] pool->taskQueue;
+        delete[] pool->workId;
     // 释放互斥锁资源
     pthread_mutex_destroy(&pool->mutexBusy);
     pthread_mutex_destroy(&pool->mutexPool);

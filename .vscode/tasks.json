@@ -10,7 +10,8 @@
                 "${fileDirname}/*.cpp",
                 "-o",
                 "${fileDirname}/output/${fileBasenameNoExtension}.out",
-                "-lpthread"
+                "-lpthread",
+                "-lfcgi"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

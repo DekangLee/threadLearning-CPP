@@ -35,19 +35,20 @@ struct threadPool
     pthread_cond_t notFull;  // 任务队列是否已满
     pthread_cond_t notEmpty; // 任务队列是否已空
 };
-// 创建线程池函数
+// 创建线程池函数 capacity 为任务队列容量，maxNum与minNum 分别为worker线程存活的最大值和最小值
 threadPool *threadPoolCreate(int capacity, int maxNum, int minNum);
-// 销毁线程池函数
+// 销毁线程池函数 pool为要销毁的线程池地址
 int threadPoolDestroy(threadPool *pool);
-// 给线程池添加任务
-void threadPoolAdd(threadPool *pool,void (*)(void *), void *);
-// 获取线程池工作的线程数
+// 给线程池添加任务 pool 为对应线程池地址，func为函数地址，arg为func要穿的参数地址
+void threadPoolAdd(threadPool *pool,void (*func)(void *), void *arg);
+// 获取线程池工作的线程数 pool为对应线程池地址
 int threadPoolBusyNum(threadPool *pool);
-// 获取线程池活着的线程数
+// 获取线程池活着的线程数 pool为对应线程池地址
 int threadPoolLiveNum(threadPool *pool);
-// worker函数
+// worker函数 arg为线程回调函数形参地址
 void *worker(void *arg);
-// manager 函数
+// manager 函数 arg为线程回调函数形参地址
 void *manager(void *arg);
+// 线程退出函数
 void threadExit(threadPool *pool);
 #endif
