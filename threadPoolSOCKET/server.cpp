@@ -6,14 +6,20 @@
 // #include <netinet/in.h>
 #include <iostream>
 #include <pthread.h>
+#include "threadPool.hpp"
 using namespace std;
-void *working(void *arg);
+void working(void *arg);
+void acceptCon(void *arg);
 struct sockInfo
 {
     sockaddr_in caddr;
     int cfd;
 };
-vector<sockInfo> infoArr;
+struct poolInfo
+{
+    threadPool *pool;
+    int lfd;
+};
 int main()
 {
     // 1.创建用于监听的套接字
@@ -44,40 +50,39 @@ int main()
         perror("listen");
         return -1;
     }
-    infoArr.resize(512);
-    for (auto &a : infoArr)
-    {
-        a.cfd = -1;
-    }
+    poolInfo *info = new poolInfo;
+    // 创建线程池
+    threadPool *pool = threadPoolCreate(100, 128, 2);
+    info->pool = pool;
+    info->lfd = sockfd;
+    threadPoolAdd(pool, acceptCon, info);
+    pthread_exit(NULL);
+    return 0;
+}
+// 3.阻塞并等待客户端连接
+void acceptCon(void *arg)
+{
+    poolInfo *info = (poolInfo*)arg;
     socklen_t addrlen = sizeof(sockaddr_in);
-    // 3.阻塞并等待客户端连接
     while (true)
     {
         sockInfo sInfo;
-        sockInfo *pSock;
-        for (auto &a : infoArr)
-        {
-            if (a.cfd == -1)
-            {
-                pSock = &a;
-            }
-        }
+        sockInfo *pSock = new sockInfo;
+
         cout << "等待客户端连接....." << endl;
-        pSock->cfd = accept(sockfd, (sockaddr *)(&(pSock->caddr)), &addrlen);
+        pSock->cfd = accept(info->lfd, (sockaddr *)(&(pSock->caddr)), &addrlen);
         if (pSock->cfd == -1)
         {
             perror("accept");
             continue;
         }
-        pthread_t tid;
-        pthread_create(&tid, NULL, working, pSock);
-        pthread_detach(tid);
+        threadPoolAdd(info->pool, working, pSock);
     }
-    close(sockfd);
-    return 0;
+    delete info;
+    close(info->lfd);
 }
 // 4.通信, 将通信功能写在子线程
-void *working(void *arg)
+void working(void *arg)
 {
     sockInfo *pSock = (sockInfo *)arg;
     printf("accept sucessful! IP:%s port:%d cfd:%d\n", inet_ntoa(pSock->caddr.sin_addr), ntohs(pSock->caddr.sin_port), pSock->cfd);
@@ -104,6 +109,5 @@ void *working(void *arg)
         }
     }
     close(pSock->cfd);
-    pSock->cfd = -1;
-    return NULL;
+    delete pSock;
 }
