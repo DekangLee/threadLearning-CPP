@@ -112,7 +112,7 @@ void *consumerF(void *arg)
         sem_wait(&cSem);
         Node *newNode = head;  // 读取head时，由于可能发生阻塞，故应该在阻塞解除之后读取临界区内容
         print(head);
-        cout << "consumer-id : " << *id << "  number = " << newNode->number << "  chian-szie = " << size(head) << endl;
+        cout << "consumer-id : " << *id << "  number = " << newNode->number << "  chian-size = " << size(head) << endl;
         Node *nextNode = head->next;
         delete head;
         head = nextNode;
