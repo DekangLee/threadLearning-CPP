@@ -2,6 +2,7 @@
     "git.useEditorAsCommitInput": false,
     "files.associations": {
         "ostream": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "thread": "cpp"
     }
 }
