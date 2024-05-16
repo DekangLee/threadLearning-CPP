@@ -79,7 +79,7 @@ void *producerF(void *arg)
         pthread_mutex_lock(&mutex);
         while(size(head) >= MAXSIZE)  // while里的条件即是条件量满足条件时会主动放弃mutex
         //这里不能使用if 原因为同种类型的线程拿到mutex时直接运行，不再判断条件
-            pthread_cond_wait(&cond, &mutex); // 可以将条件变量理解为为完成一个任务在线程之间不断要通信的临界区状态
+            pthread_cond_wait(&cond, &mutex); // 可以将条件变量理解为，为完成一个任务在线程之间不断要通信的临界区状态
                                               // 方便线程做出正确动作
         // 线程被其他线程pthread_cond_broadcast唤醒时,会抢互斥锁
         if (head != NULL)
